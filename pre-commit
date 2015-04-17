@@ -1,0 +1,83 @@
+#!/bin/bash
+# git precommit-hook for code sniff 
+#
+# @author Mehmet Ali Ergut <mim@taximact.com>
+# @date 2014-04-17 17:31:09
+ 
+# Script needs php code sniffer, so you need to install it before using it.
+# Ex: brew install php-code-sniffer
+# After installition change PHPCS with your phpcs path
+# `which phpcs`
+
+PHPCS=/usr/local/bin/phpcs
+
+# use `phpcs -i` to list your installed standards, i prefer PSR2
+PHPCS_CODING_STANDARD=PSR2
+PHPCS_ENCODING=utf-8
+
+# valid file extensions to use code sniff
+FILE_EXTENSIONS="\.(php|phtml)$"
+
+# temporary folder to stage files
+# it will not affect your commits cause it is under .git directory
+TMP_STAGING=".git/tmp"
+
+# check if code sniffer exists
+if [ ! -x $PHPCS_BIN ]; then
+    echo "PHP CodeSniffer executable not found."
+    exit 1
+fi
+
+# retrive all staged files
+FILES=$(git diff-index --name-only --cached --diff-filter=ACMR HEAD -- )
+
+if [ "$FILES" == "" ]; then
+    echo "There's nothing to check"
+    exit 0
+fi
+
+# create temporary copy of staging area
+if [ -e $TMP_STAGING ]; then
+    rm -rf $TMP_STAGING
+fi
+mkdir $TMP_STAGING
+echo "directory created"
+
+# get valid files to check
+FILES_TO_CHECK=""
+for FILE in $FILES
+do
+    echo "$FILE" | egrep -q "$FILE_EXTENSIONS"
+    RETVAL=$?
+    if [ "$RETVAL" -eq "0" ]
+    then
+        FILES_TO_CHECK="$FILES_TO_CHECK $FILE"
+    fi
+done
+
+if [ "$FILES_TO_CHECK" == "" ]; then
+    echo "There's nothing to check"
+    exit 0
+fi
+
+STAGED_FILES=""
+for FILE in $FILES_TO_CHECK
+do
+  ID=$(git diff-index --cached HEAD $FILE | cut -d " " -f4)
+
+  mkdir -p "$TMP_STAGING/$(dirname $FILE)"
+  git cat-file blob $ID > "$TMP_STAGING/$FILE"
+  STAGED_FILES="$STAGED_FILES $TMP_STAGING/$FILE"
+done
+
+SNIFF_RESULT=$($PHPCS -s --standard=$PHPCS_CODING_STANDARD --encoding=$PHPCS_ENCODING $STAGED_FILES)
+
+RETVAL=$?
+
+rm -rf $TMP_STAGING
+
+if [ $RETVAL -ne 0 ]; then
+    echo "$SNIFF_RESULT"
+fi
+
+exit $RETVAL
