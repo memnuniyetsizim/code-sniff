@@ -9,7 +9,13 @@
 # After installition change PHPCS with your phpcs path
 # `which phpcs`
 
-PHPCS=/usr/local/bin/phpcs
+PHPCS=$(type -p "phpcs")
+
+if [ ! -f $PHPCS ]; then
+  echo "Can not find phpcs executable. Please install or set in pre-commit file line 12"
+  exit 0
+fi
+
 PHPCS_DEFAULT_RULESET_FILE="ruleset.xml"
 # use `phpcs -i` to list your installed standards, i prefer PSR2
 PHPCS_CODING_STANDARD=PSR2
