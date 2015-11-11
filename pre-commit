@@ -10,7 +10,7 @@
 # `which phpcs`
 
 PHPCS=/usr/local/bin/phpcs
-
+PHPCS_DEFAULT_RULESET_FILE="ruleset.xml"
 # use `phpcs -i` to list your installed standards, i prefer PSR2
 PHPCS_CODING_STANDARD=PSR2
 PHPCS_ENCODING=utf-8
@@ -69,6 +69,11 @@ do
   git cat-file blob $ID > "$TMP_STAGING/$FILE"
   STAGED_FILES="$STAGED_FILES $TMP_STAGING/$FILE"
 done
+
+# check if there is a ruleset.xml
+if [ -f $PHPCS_DEFAULT_RULESET_FILE ]; then
+    PHPCS_CODING_STANDARD=$PHPCS_DEFAULT_RULESET_FILE
+fi
 
 SNIFF_RESULT=$($PHPCS -s --standard=$PHPCS_CODING_STANDARD --encoding=$PHPCS_ENCODING $STAGED_FILES)
 
