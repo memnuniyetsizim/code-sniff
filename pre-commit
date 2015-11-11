@@ -9,9 +9,14 @@
 # After installition change PHPCS with your phpcs path
 # `which phpcs`
 
-PHPCS=$(type -p "phpcs")
+PHPCS_BIN=$(type -p "phpcs")
+PHPCS_VENDOR=./vendor/bin/phpcs
 
-if [ ! -f $PHPCS ]; then
+if [ -f $PHPCS_BIN ]; then
+  PHPCS=$PHPCS_BIN
+elif [ -f $PHPCS_VENDOR  ]; then
+  PHPCS=$PHPCS_VENDOR
+else 
   echo "Can not find phpcs executable. Please install or set in pre-commit file line 12"
   exit 0
 fi
@@ -27,12 +32,6 @@ FILE_EXTENSIONS="\.(php|phtml)$"
 # temporary folder to stage files
 # it will not affect your commits cause it is under .git directory
 TMP_STAGING=".git/tmp"
-
-# check if code sniffer exists
-if [ ! -x $PHPCS_BIN ]; then
-    echo "PHP CodeSniffer executable not found."
-    exit 1
-fi
 
 # retrive all staged files
 FILES=$(git diff-index --name-only --cached --diff-filter=ACMR HEAD -- )
